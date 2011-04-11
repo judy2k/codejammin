@@ -85,10 +85,10 @@ def main(cls, argv=sys.argv[1:]):
 	logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
 	
 	if options.select is None:
-		if len(args) != 2:
-			opar.error('Input and output files must be specified.')
+		if not 1 <= len(args) <= 2:
+			opar.error('Input file must be specified.')
 		fin = open(argv[0], 'r')
-		fout = open(argv[1], 'w')
+		fout = open(argv[1], 'w') if len(args) > 1 else sys.stdout
 		cls.run(fin, fout)
 	else:
 		if len(args) != 1:
