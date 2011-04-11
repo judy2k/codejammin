@@ -4,6 +4,7 @@
 import logging
 import optparse
 import sys
+import time
 
 
 class Case(object):
@@ -11,11 +12,19 @@ class Case(object):
 		self.case_num = case_num
 		self.fin = fin
 		self.fout = fout
+	
+	def run_case(self):
+		start_time = time.time()
 		self.read_case()
 		self.solve_case()
 		self._write_case_prefix()
 		self.write_case()
-		
+		duration = time.time() - start_time
+		logging.debug('Time for case %d: %.2fs', self.case_num, duration)
+	
+	def skip_case(self):
+		self.read_case()
+	
 	def read_case(self):
 		raise NotImplementedError()
 	
@@ -44,58 +53,46 @@ class Case(object):
 		print >>self.fout, ' '.join([str(i) for i in i_list])
 	
 	@classmethod
-	def run(cls, fin, fout):
+	def run(cls, fin, fout, selected_cases=None):
 		case_count = int(fin.readline())
-		for case_index in range(case_count):
-			case = cls(case_index + 1, fin, fout)
-
-			
-class Africa1A(Case):
-	def read_case(self):
-		self.c = self.read_int()
-		self.i = self.read_int()
-		self.p_list = self.read_int_list()
-	
-	def solve_case(self):
-		p_len = len(self.p_list)
 		
-		indexes = zip(range(p_len), self.p_list)
-		indexes.sort(key=lambda x: x[1])
+		start_time = time.time()
+		if selected_cases is not None:
+			executed_count = 0
+			for case_index in range(case_count):
+				case = cls(case_index + 1, fin, fout)
+				if case_index+1 in selected_cases:
+					case.run_case()
+					executed_count += 1
+				else:
+					case.skip_case()
+		else:
+			for case_index in range(case_count):
+				case = cls(case_index + 1, fin, fout).run_case()
+			executed_count = case_count
+		duration = time.time() - start_time
+		logging.debug('Total Duration: %.2fs', duration)
+		logging.debug('Average Case Time: %.5fs (%d cases executed)', duration/executed_count, executed_count)
 		
-		self.p_list = [i[1] for i in indexes]
 		
-		for i in range(p_len):
-			val1 = self.p_list[i]
-			for j in range(i+1, p_len):
-				res = val1 + self.p_list[j]
-				if res > self.c:
-					break
-				elif res == self.c:
-					self.result = sorted([indexes[i][0]+1, indexes[j][0]+1])
-					return
-		raise Exception()
-	
-	def write_case(self):
-		self.write_int_list(self.result)
-
-
-def main(argv=sys.argv[1:]):
+def main(cls, argv=sys.argv[1:]):
 	opar = optparse.OptionParser()
 	opar.add_option('-v', '--verbose', action='count', default=0)
-	
+	opar.add_option('-s', '--select', action='append', default=None)
 	options, args = opar.parse_args(argv)
 	
 	level = logging.INFO if options.verbose == 0 else logging.DEBUG
-	logging.basicConfig(level=level)
+	logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
 	
-	if len(args) != 2:
-		opar.error('Input and output files must be specified.')
-	
-	fin = open(argv[0], 'r')
-	fout = open(argv[1], 'w')
-	
-	Africa1A.run(fin, fout)
-
-
-if __name__ == '__main__':
-	main()
+	if options.select is None:
+		if len(args) != 2:
+			opar.error('Input and output files must be specified.')
+		fin = open(argv[0], 'r')
+		fout = open(argv[1], 'w')
+		cls.run(fin, fout)
+	else:
+		if len(args) != 1:
+			opar.error('Only input file must be supplied when using --select')
+		fin = open(argv[0], 'r')
+		selected_cases = [int(i) for i in options.select]
+		cls.run(fin, sys.stdout, selected_cases)
