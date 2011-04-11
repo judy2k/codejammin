@@ -2,13 +2,13 @@ import solution
 
 class Africa1B(solution.Case):
 	def read_case(self):
-		pass
+		self.line = self.fin.readline().strip()
 	
 	def solve_case(self):
-		pass
+		self.result = ' '.join(reversed(self.line.split(' ')))
 	
 	def write_case(self):
-		pass
+		print >>self.fout, self.result
 
 
 if __name__ == '__main__':
