@@ -10,10 +10,10 @@ class Africa1A(solution.Case):
 	def solve_case(self):
 		p_len = len(self.p_list)
 		
-		indexes = zip(range(1, p_len+1), self.p_list)
-		indexes.sort(key=lambda x: x[1])
-		
-		indexes, self.p_list = zip(*indexes)
+		indexes, self.p_list = zip(
+				*sorted(
+						zip(range(1, p_len+1), self.p_list),
+						key=lambda x: x[1]))
 		
 		for i in range(p_len):
 			val1 = self.p_list[i]
